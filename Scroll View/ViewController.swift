@@ -16,16 +16,19 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         registerForNotifications()
+        delegateAllTextFields()
+        hideKeyboard()
 
     }
-
+    
     func registerForNotifications() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWasShawn(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWasShawn(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyBoardDidHidden(_:)), name: UIResponder.keyboardDidHideNotification, object: nil)
     }
 
     @objc func keyBoardWasShawn(_ notification: NSNotification) {
-        let heightDifference: CGFloat = 3
+//        print("\(#function) executed")
+        let heightDifference: CGFloat = 5
         
         guard let info = notification.userInfo, let keyboardFrameValue = info[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue else { return }
         
@@ -38,7 +41,8 @@ class ViewController: UIViewController {
         scrollView.scrollIndicatorInsets = contentInsets
     }
     
-    @objc func keyBoardWillBeHidden(_ notification: NSNotification) {
+    @objc func keyBoardDidHidden(_ notification: NSNotification) {
+//        print("\(#function) executed")
         let contentInsets = UIEdgeInsets.zero
         
         scrollView.contentInset = contentInsets
@@ -47,3 +51,45 @@ class ViewController: UIViewController {
     
 }
 
+// MARK: - Hides keyboard on RETURN Button
+extension ViewController: UITextFieldDelegate{
+    // Hides keyboard on RETURN Button
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+//        print("\(#function) executed")
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    func delegateAllTextFields() { //Must call in the viewDidLoad() for example
+        for someView in getAllSubviews(rootView: scrollView) {
+            if let someTextField = someView as? UITextField {
+                someTextField.delegate = self
+//                print("Text field detected")
+            }
+        }
+    }
+    
+    func getAllSubviews(rootView: UIView) -> [UIView] {
+        
+        var flatArray: [UIView] = []
+        flatArray.append(rootView)
+        
+        for subview in rootView.subviews {
+            flatArray += getAllSubviews(rootView: subview)
+        }
+        return flatArray
+    }
+}
+
+// MARK: - Hides Keyboard on Touch Outside
+extension UIViewController { // Hides keyboard on Touch Outside Tap
+    func hideKeyboard() {
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
+    }
+}
